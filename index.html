@@ -1,0 +1,1467 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard de Llegada de Camiones</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { 
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      min-height: 100vh;
+    }
+    .dashboard-container { 
+      padding: 2rem; 
+      margin: 0; 
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .btn-group-sm>.btn, .btn-sm {
+    background-color: #343a40;
+    color: #fff;
+    --bs-btn-padding-y: 0.25rem;
+    --bs-btn-padding-x: 0.5rem;
+    --bs-btn-font-size: 0.875rem;
+    --bs-btn-border-radius: var(--bs-border-radius-sm);
+}
+    .card { 
+      border-radius: 1rem; 
+      border: none;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      margin-bottom: 1.5rem;
+    }
+    .card-header {
+      background-color: #0d6efd;
+      color: white;
+      border-radius: 1rem 1rem 0 0 !important;
+      padding: 1rem 1.5rem;
+      font-weight: 600;
+    }
+    #tablaCamiones th, #tablaCamiones td { 
+      text-align: center; 
+      vertical-align: middle;
+      padding: 0.75rem;
+    }
+    #tablaCamiones thead th {
+      background-color: #f8f9fa;
+      border-bottom: 2px solid #dee2e6;
+      font-weight: 600;
+      color: #495057;
+    }
+    #tablaCamiones tbody tr:hover {
+      background-color: #f8f9fa;
+      cursor: pointer;
+    }
+    .badge-carril {
+      background-color: #e7f1ff;
+      color: #0d6efd;
+      font-weight: 500;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+    }
+    .btn-primary {
+      background-color: #0d6efd;
+      border-color: #0d6efd;
+      padding: 0.5rem 1rem;
+      font-weight: 500;
+    }
+    .btn-primary:hover {
+      background-color: #0b5ed7;
+      border-color: #0a58ca;
+      transform: translateY(-1px);
+      transition: all 0.2s;
+    }
+    .form-control, .form-select {
+      border: 1px solid #ced4da;
+      border-radius: 0.375rem;
+      padding: 0.5rem 0.75rem;
+    }
+    .form-control:focus, .form-select:focus {
+      border-color: #86b7fe;
+      box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+    .empty-table-message {
+      text-align: center;
+      color: #6c757d;
+      font-style: italic;
+      padding: 2rem;
+    }
+    .carril-seleccionado {
+      border: 2px solid #0d6efd !important;
+      box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+    }
+    .alert-success {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      animation: slideIn 0.3s ease-out, fadeOut 0.5s ease-out 2.5s forwards;
+      border-radius: 0.5rem;
+    }
+    
+    @keyframes slideIn {
+      from {
+        transform: translateX(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+    
+    @keyframes fadeOut {
+      to {
+        opacity: 0;
+        transform: translateX(100%);
+      }
+    }
+    
+    /* Estilos para el escáner */
+    .scanner-container {
+      position: relative;
+      border: 2px dashed #0d6efd;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #f8f9fa;
+    }
+    
+    #scannerVideo {
+      width: 100%;
+      height: 300px;
+      object-fit: cover;
+    }
+    
+    .scanner-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+    }
+    
+    .scanner-frame {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 250px;
+      height: 250px;
+      border: 3px solid #0d6efd;
+      border-radius: 10px;
+      box-shadow: 0 0 0 1000px rgba(0, 0, 0, 0.5);
+    }
+    
+    .scanner-laser {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: #ff0000;
+      box-shadow: 0 0 8px rgba(255, 0, 0, 0.6);
+      animation: scan 2s infinite linear;
+    }
+    
+    @keyframes scan {
+      0% { top: 0; }
+      50% { top: 100%; }
+      100% { top: 0; }
+    }
+    
+    .barcode-input {
+      font-family: 'Courier New', monospace;
+      letter-spacing: 1px;
+    }
+    
+    .status-indicator {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 5px;
+    }
+    
+    .status-active {
+      background-color: #198754;
+      animation: pulse 1s infinite;
+    }
+    
+    .status-inactive {
+      background-color: #dc3545;
+    }
+    
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+    
+    .auto-registro-indicator {
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      background-color: #198754;
+      color: white;
+      border-radius: 50%;
+      width: 25px;
+      height: 25px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      z-index: 2;
+    }
+    
+    .quick-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 15px;
+    }
+    
+    .quick-action-btn {
+      flex: 1;
+      min-width: 120px;
+    }
+    
+    .manual-mode .form-control,
+    .manual-mode .form-select {
+      border-color: #ffc107;
+      background-color: #fff9e6;
+    }
+    
+    .auto-mode .form-control,
+    .auto-mode .form-select {
+      border-color: #198754;
+      background-color: #e8f5e9;
+    }
+    
+    .error-mode .form-control,
+    .error-mode .form-select {
+      border-color: #dc3545;
+      background-color: #ffe6e6;
+      animation: shake 0.5s;
+    }
+    
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+      20%, 40%, 60%, 80% { transform: translateX(5px); }
+    }
+    
+    .duplicate-highlight {
+      animation: highlight 2s;
+      background-color: rgba(220, 53, 69, 0.1);
+    }
+    
+    @keyframes highlight {
+      0% { background-color: rgba(220, 53, 69, 0.3); }
+      100% { background-color: transparent; }
+    }
+    
+    .camion-duplicado {
+      background-color: #fff3cd !important;
+      border-left: 4px solid #ffc107;
+    }
+    
+    .registro-duplicado {
+      border: 2px solid #dc3545 !important;
+      box-shadow: 0 0 10px rgba(220, 53, 69, 0.3);
+    }
+    
+    .auto-mode-indicator {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background: #198754;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-size: 0.7rem;
+    }
+    
+    .duplicate-warning {
+      border: 2px solid #ffc107;
+      background-color: #fff3cd;
+      border-radius: 5px;
+      padding: 10px;
+      margin-top: 10px;
+    }
+    
+    /* Estilo especial para ruta "santa fe 3" */
+    .ruta-santa-fe-3 {
+      background-color: rgba(25, 135, 84, 0.15) !important;
+      border-left: 4px solid #198754 !important;
+      border-right: 4px solid #198754 !important;
+    }
+    
+    .ruta-santa-fe-3 td:nth-child(3) { /* Columna de Ruta */
+      background-color: rgba(25, 135, 84, 0.2);
+      font-weight: bold;
+      color: #198754 !important;
+      position: relative;
+    }
+    
+    .ruta-santa-fe-3 td:nth-child(3)::after {
+      content: "🟢";
+      position: absolute;
+      right: 5px;
+    }
+    
+    /* Estilo especial para tipo "Apoyo" - COLOR ROJO */
+    .tipo-apoyo {
+      background-color: rgba(220, 53, 69, 0.15) !important;
+      border-left: 4px solid #dc3545 !important;
+      border-right: 4px solid #dc3545 !important;
+      animation: pulseRed 2s infinite;
+    }
+    
+    .tipo-apoyo td:nth-child(5) { /* Columna de Tipo de Carga */
+      background-color: rgba(220, 53, 69, 0.2);
+      font-weight: bold;
+      color: #dc3545 !important;
+      position: relative;
+    }
+    
+    .tipo-apoyo td:nth-child(5)::after {
+      
+      position: absolute;
+      right: 5px;
+    }
+    
+    @keyframes pulseRed {
+      0% { background-color: rgba(220, 53, 69, 0.1); }
+      50% { background-color: rgba(220, 53, 69, 0.2); }
+      100% { background-color: rgba(220, 53, 69, 0.1); }
+    }
+    
+    .badge-ruta-especial {
+      background-color: #198754 !important;
+      color: white !important;
+      font-weight: bold;
+      animation: pulse 1.5s infinite;
+    }
+    
+    .badge-tipo-apoyo {
+      background-color: #dc3545 !important;
+      color: white !important;
+      font-weight: bold;
+      animation: pulse 1.5s infinite;
+    }
+    
+    .route-highlight {
+      background: linear-gradient(90deg, rgba(25, 135, 84, 0.1), rgba(25, 135, 84, 0.2), rgba(25, 135, 84, 0.1));
+      border-radius: 4px;
+      padding: 2px 8px;
+      display: inline-block;
+    }
+    
+    .tipo-apoyo-highlight {
+      background: linear-gradient(90deg, rgba(220, 53, 69, 0.1), rgba(220, 53, 69, 0.2), rgba(220, 53, 69, 0.1));
+      border-radius: 4px;
+      padding: 2px 8px;
+      display: inline-block;
+    }
+    
+    /* Estilo para formulario cuando es tipo Apoyo */
+    .apoyo-mode .form-control,
+    .apoyo-mode .form-select {
+      border-color: #dc3545;
+      background-color: #ffe6e6;
+    }
+    
+    .form-apoyo-indicator {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background: #dc3545;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-size: 0.7rem;
+    }
+  </style>
+</head>
+<body>
+
+
+
+<div class="container-fluid dashboard-container">
+  <h2 class="text-center mb-4" style="color: #0d6efd;">🚛 Dashboard de Llegada de Camiones</h2>
+
+  <!-- Escáner de código de barras -->
+  <div class="card shadow mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span>📷 Escáner de Código de Barras/QR</span>
+      <div>
+        <span class="status-indicator" id="scannerStatus"></span>
+        <small id="scannerStatusText">Listo para escanear</small>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-8">
+          <div class="scanner-container" id="scannerContainer">
+            <video id="scannerVideo"></video>
+            <div class="scanner-frame">
+              <div class="scanner-laser"></div>
+            </div>
+            <div class="scanner-overlay" id="scannerOverlay">
+              <h4>🔍 Escáner de Códigos</h4>
+              <p class="text-center">Coloca el código de barras dentro del marco</p>
+              <button class="btn btn-primary mt-3" onclick="startScanner()">
+                ▶️ Iniciar Escáner
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">📋 Entrada Manual de Código</label>
+            <input type="text" 
+                   class="form-control barcode-input" 
+                   id="barcodeInput" 
+                   placeholder="Ej: Rusa-421-Santa fe 3-2-Apoyo"
+                   autocomplete="off">
+            <div class="form-text">Presiona Enter después de escribir el código (se registrará automáticamente)</div>
+          </div>
+          
+          <div class="quick-actions">
+          
+            <a href="dashboard.html"> <button  class="btn btn-outline-secondary">Dashboard</button> </a>
+           
+            <button class="btn btn-outline-danger quick-action-btn" onclick="testCode('Rusa-999-Otra ruta-5-Apoyo')">
+              🔴 Solo Apoyo
+            </button>
+          </div>
+          
+          <div class="mt-3">
+            <h6>📝 Formato del Código:</h6>
+            <code>Prefijo-Numero-Ruta-Carril-TipoCarga</code>
+            <ul class="small mt-2">
+              <li><strong>Prefijo</strong>: Rusa, TRK, Cam, etc.</li>
+              <li><strong>Numero</strong>: Número de camión (ej: 421)</li>
+              <li><strong>Ruta</strong>: Nombre de ruta (ej: Santa fe 3)</li>
+              <li><strong>Carril</strong>: Número de carril (1-10)</li>
+              <li><strong>TipoCarga</strong>: Tipo  (Apoyo, Titular, etc.)</li>
+            </ul>
+            
+            <div class="alert alert-danger small">
+              <strong>⚠️ Tipos Especiales:</strong> 
+              <span class="badge bg-danger">Apoyo</span> se resalta en <strong>rojo</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Formulario -->
+  <div class="card shadow">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span>📝 Registrar Nueva Llegada</span>
+      <div>
+        <span id="registroMode" class="badge bg-info">Modo Manual</span>
+        <span id="tipoApoyoIndicator" class="badge bg-danger d-none">Tipo: Apoyo</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <form id="camionForm">
+        <div class="row g-3">
+          <div class="col-md-2">
+            <label class="form-label fw-semibold">Número de Camión</label>
+            <input type="text" class="form-control" id="numeroCamion" 
+                   placeholder="Ej: 421" pattern="[0-9]+" title="Solo números">
+            <div class="invalid-feedback" id="errorNumeroCamion">
+              Este camión ya está registrado y activo
+            </div>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Nombre de Ruta</label>
+            <input type="text" class="form-control" id="nombreRuta" 
+                   placeholder="Ej: Santa fe 3">
+            <div class="form-text">Nota: "Santa Fe 3" se resaltará en verde</div>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label fw-semibold">Carril</label>
+            <select class="form-select" id="carril">
+              <option value="">Seleccionar...</option>
+              <option value="1">Carril 1 (A)</option>
+              <option value="2">Carril 2 (B)</option>
+              <option value="3">Carril 3 (C)</option>
+              <option value="4">Carril 4 (D)</option>
+              <option value="5">Carril 5 (E)</option>
+              <option value="6">Carril 6 (F)</option>
+              <option value="7">Carril 7 (G)</option>
+              <option value="8">Carril 8 (H)</option>
+              <option value="9">Carril 9 (I)</option>
+              <option value="10">Carril 10 (J)</option>
+            </select>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label fw-semibold">Tipo de Carga</label>
+            <input type="text" class="form-control" id="tipoCarga" 
+                   placeholder="Ej: Apoyo, 32, etc.">
+            <div class="form-text">"Apoyo" resaltará en rojo</div>
+          </div>
+          <div class="col-md-3 d-flex align-items-end gap-2">
+            <button type="submit" class="btn btn-primary w-100" id="btnRegistrar">
+              <span style="font-size: 1.2rem;">✓</span> Registrar Manual
+            </button>
+            <button type="button" class="btn btn-outline-secondary" onclick="limpiarFormulario()">
+              <span style="font-size: 1.2rem;">🗑️</span> Limpiar
+            </button>
+          </div>
+        </div>
+        
+        <!-- Mensaje de error para duplicados -->
+        <div id="duplicateWarning" class="duplicate-warning mt-3" style="display: none;">
+          <div class="d-flex align-items-center">
+            <span style="font-size: 1.5rem; margin-right: 10px;">⚠️</span>
+            <div>
+              <strong>Camión duplicado detectado</strong>
+              <div id="duplicateDetails" class="small"></div>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-warning ms-auto" onclick="registrarSalidaDuplicado()">
+              Registrar Salida Primero
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Tabla -->
+  <div class="card shadow mt-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <span>📋 Historial de Llegadas</span>
+      <div>
+        <button class="btn btn-outline-danger btn-sm" onclick="limpiarHistorial()">
+          🗑️ Limpiar Historial
+        </button>
+        <button class="btn btn-outline-info btn-sm ms-2" onclick="exportarDatos()">
+          📤 Exportar
+        </button>
+       
+        <button class="btn btn-outline-danger btn-sm ms-2" onclick="filtrarTipoApoyo()">
+          🔴 Mostrar Apoyo
+        </button>
+        <button class="btn btn-outline-secondary btn-sm ms-2" onclick="quitarFiltros()">
+          📋 Mostrar Todo
+        </button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover" id="tablaCamiones">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Numero de Camion</th>
+              <th>Ruta</th>
+              <th>Carril</th>
+              <th>Tipo</th>
+              <th>Hora de Llegada</th>
+              <th>Hora de Salida</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tablaBody">
+            <!-- Las filas se generan dinámicamente -->
+          </tbody>
+        </table>
+        <div id="emptyMessage" class="empty-table-message" style="display: none;">
+          No hay camiones registrados. ¡Escanea el primer código!
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Incluir biblioteca para escanear códigos de barras/QR -->
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.19.1"></script>
+
+<script>
+  // Variables globales
+  let codeReader = null;
+  let scannerActive = false;
+  let lastScannedCode = '';
+  let modoActual = 'manual'; // 'manual' o 'auto'
+  let camionDuplicado = null; // Para almacenar datos del camión duplicado
+  let filtroActivo = 'todos'; // 'todos', 'santa-fe-3', 'apoyo'
+
+  // Prefijos válidos para registro automático
+  const prefijosValidos = ['RUSA', 'TRK', 'CAM', 'TRA', 'TRUCK', 'TCK', 'CT'];
+
+  // Mapa para convertir número de carril a letra
+  const mapaCarriles = {
+    "1": "A", "2": "B", "3": "C", "4": "D",
+    "5": "E", "6": "F", "7": "G", "8": "H",
+    "9": "I", "10": "J"
+  };
+
+  // Función para verificar si es ruta "santa fe 3"
+  function esRutaSantaFe3(nombreRuta) {
+    if (!nombreRuta) return false;
+    
+    // Convertir a minúsculas y limpiar espacios
+    const rutaLimpia = nombreRuta.toLowerCase().trim();
+    
+    // Verificar variaciones de "santa fe 3"
+    return rutaLimpia.includes('santa fe 3') || 
+           rutaLimpia === 'santa fe 3' ||
+           rutaLimpia.includes('santa fe3') ||
+           rutaLimpia.includes('santa-fe-3') ||
+           rutaLimpia.includes('santafe3');
+  }
+
+  // Función para verificar si es tipo "Apoyo"
+  function esTipoApoyo(tipoCarga) {
+    if (!tipoCarga) return false;
+    
+    // Convertir a minúsculas y limpiar espacios
+    const tipoLimpio = tipoCarga.toLowerCase().trim();
+    
+    // Verificar variaciones de "apoyo"
+    return tipoLimpio === 'apoyo' ||
+           tipoLimpio.includes('apoyo') ||
+           tipoLimpio === 'soporte' ||
+           tipoLimpio.includes('soporte');
+  }
+
+  // Función para verificar si un camión está duplicado
+  function verificarDuplicado(numeroCamion) {
+    const camiones = JSON.parse(localStorage.getItem("camiones") || "[]");
+    return camiones.find(c => 
+      c.numeroCamion === numeroCamion && c.horaSalida === "—"
+    );
+  }
+
+  // Mostrar error de duplicado en formulario
+  function mostrarErrorDuplicado(camionExistente, esAutomatico = false) {
+    const formContainer = document.getElementById('camionForm').parentElement;
+    const inputNumero = document.getElementById('numeroCamion');
+    const errorDiv = document.getElementById('errorNumeroCamion');
+    const duplicateWarning = document.getElementById('duplicateWarning');
+    const duplicateDetails = document.getElementById('duplicateDetails');
+    
+    // Guardar datos del camión duplicado
+    camionDuplicado = camionExistente;
+    
+    // Cambiar a modo error
+    formContainer.classList.remove('manual-mode', 'auto-mode', 'apoyo-mode');
+    formContainer.classList.add('error-mode');
+    
+    // Marcar input como inválido
+    inputNumero.classList.add('is-invalid');
+    
+    // Mostrar detalles del duplicado
+    const letraCarril = mapaCarriles[camionExistente.carril] || camionExistente.carril;
+    duplicateDetails.innerHTML = `
+      Camión #${camionExistente.numeroCamion} ya está activo en <strong>Carril ${letraCarril}</strong><br>
+      Ruta: ${camionExistente.nombreRuta} | Llegada: ${camionExistente.horaLlegada}
+    `;
+    
+    // Mostrar advertencia
+    duplicateWarning.style.display = 'block';
+    
+    // Mostrar notificación
+    const mensaje = esAutomatico ? 
+      `⚠️ Código escaneado: Camión ${numeroCamion} ya está registrado y activo` :
+      `⚠️ Camión ${numeroCamion} ya está registrado y activo`;
+    
+    mostrarNotificacion(mensaje, 'warning');
+    
+    // Resaltar el camión duplicado en la tabla
+    resaltarCamionDuplicado(camionExistente.numeroCamion);
+    
+    return false;
+  }
+
+  // Resaltar camión duplicado en la tabla
+  function resaltarCamionDuplicado(numeroCamion) {
+    const filas = document.querySelectorAll('#tablaBody tr');
+    filas.forEach(fila => {
+      const celdaNumero = fila.querySelector('td:nth-child(2)');
+      if (celdaNumero && celdaNumero.textContent.includes(numeroCamion)) {
+        fila.classList.add('camion-duplicado');
+        fila.classList.add('duplicate-highlight');
+        
+        // Hacer scroll a la fila
+        fila.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // Quitar resaltado después de 3 segundos
+        setTimeout(() => {
+          fila.classList.remove('duplicate-highlight');
+        }, 3000);
+      }
+    });
+  }
+
+  // Limpiar error de duplicado
+  function limpiarErrorDuplicado() {
+    const formContainer = document.getElementById('camionForm').parentElement;
+    const inputNumero = document.getElementById('numeroCamion');
+    const duplicateWarning = document.getElementById('duplicateWarning');
+    
+    // Quitar clases de error
+    formContainer.classList.remove('error-mode');
+    inputNumero.classList.remove('is-invalid');
+    
+    // Ocultar advertencia
+    duplicateWarning.style.display = 'none';
+    
+    // Limpiar variable
+    camionDuplicado = null;
+  }
+
+  // Registrar salida del camión duplicado
+  function registrarSalidaDuplicado() {
+    if (!camionDuplicado) return;
+    
+    const camiones = JSON.parse(localStorage.getItem("camiones") || "[]");
+    const index = camiones.findIndex(c => 
+      c.numeroCamion === camionDuplicado.numeroCamion && 
+      c.horaSalida === "—"
+    );
+    
+    if (index !== -1) {
+      const horaSalida = new Date().toLocaleTimeString();
+      camiones[index].horaSalida = horaSalida;
+      localStorage.setItem("camiones", JSON.stringify(camiones));
+      
+      mostrarNotificacion(`✅ Salida registrada para camión ${camionDuplicado.numeroCamion}`);
+      actualizarTabla();
+      limpiarErrorDuplicado();
+      
+      // Si estamos en modo automático, proceder con el registro
+      if (modoActual === 'auto') {
+        const datosAuto = {
+          numeroCamion: document.getElementById('numeroCamion').value.trim(),
+          nombreRuta: document.getElementById('nombreRuta').value.trim(),
+          carril: document.getElementById('carril').value,
+          tipoCarga: document.getElementById('tipoCarga').value.trim()
+        };
+        
+        setTimeout(() => {
+          registrarCamion(datosAuto, true);
+        }, 1000);
+      }
+    }
+  }
+
+  // Inicializar el escáner
+  function initScanner() {
+    codeReader = new ZXing.BrowserQRCodeReader();
+    updateScannerStatus('Listo para escanear', 'inactive');
+  }
+
+  // Iniciar el escáner
+  function startScanner() {
+    const videoElement = document.getElementById('scannerVideo');
+    const scannerOverlay = document.getElementById('scannerOverlay');
+    
+    if (!codeReader) {
+      initScanner();
+    }
+    
+    scannerOverlay.style.display = 'none';
+    updateScannerStatus('Escaneando...', 'active');
+    
+    codeReader.decodeFromVideoDevice(null, videoElement, (result, error) => {
+      if (result) {
+        // Código detectado
+        handleScannedCode(result.text);
+      }
+      
+      if (error && !error.message.includes('NotFoundException')) {
+        console.error('Error en escáner:', error);
+      }
+    });
+    
+    scannerActive = true;
+  }
+
+  // Detener el escáner
+  function stopScanner() {
+    if (codeReader && scannerActive) {
+      codeReader.reset();
+      scannerActive = false;
+      
+      const scannerOverlay = document.getElementById('scannerOverlay');
+      scannerOverlay.style.display = 'flex';
+      
+      updateScannerStatus('Escáner detenido', 'inactive');
+    }
+  }
+
+  // Actualizar estado del escáner
+  function updateScannerStatus(text, status) {
+    const statusIndicator = document.getElementById('scannerStatus');
+    const statusText = document.getElementById('scannerStatusText');
+    
+    statusText.textContent = text;
+    statusIndicator.className = 'status-indicator';
+    statusIndicator.classList.add(status === 'active' ? 'status-active' : 'status-inactive');
+  }
+
+  // Manejar código escaneado
+  function handleScannedCode(code) {
+    // Evitar procesar el mismo código múltiples veces
+    if (code === lastScannedCode) {
+      return;
+    }
+    
+    lastScannedCode = code;
+    console.log('Código escaneado:', code);
+    
+    // Mostrar notificación
+    mostrarNotificacion(`Código detectado: ${code}`, 'info');
+    
+    // Procesar el código
+    procesarCodigoBarras(code);
+    
+    // Detener el escáner temporalmente para evitar múltiples lecturas
+    setTimeout(() => {
+      lastScannedCode = '';
+    }, 2000);
+  }
+
+  // Verificar si el código tiene prefijo válido
+  function tienePrefijoValido(codigo) {
+    const primeraParte = codigo.split('-')[0].toUpperCase();
+    return prefijosValidos.includes(primeraParte);
+  }
+
+  // Procesar código de barras
+  function procesarCodigoBarras(codigo) {
+    // Verificar si tiene prefijo para registro automático
+    if (tienePrefijoValido(codigo)) {
+      // Es un código con prefijo, procesar para registro automático
+      const datos = parsearCodigoConPrefijo(codigo);
+      if (datos) {
+        // Verificar si es ruta santa fe 3
+        if (esRutaSantaFe3(datos.nombreRuta)) {
+          mostrarNotificacion('🟢 ¡Tipo aTitular detectada! Se resaltará en verde.', 'success');
+        }
+        
+        // Verificar si es tipo apoyo
+        if (esTipoApoyo(datos.tipoCarga)) {
+          mostrarNotificacion('🔴 ¡Tipo Apoyo detectado! Se resaltará en rojo.', 'warning');
+        }
+        
+        // Verificar duplicado ANTES de cambiar a modo automático
+        const duplicado = verificarDuplicado(datos.numeroCamion);
+        if (duplicado) {
+          // Mostrar error de duplicado en modo automático
+          cambiarModoRegistro('manual'); // Cambiar a manual para mostrar error
+          llenarFormulario(datos);
+          mostrarErrorDuplicado(duplicado, true);
+          return;
+        }
+        
+        // Cambiar a modo automático (no hay duplicado)
+        cambiarModoRegistro('auto');
+        
+        // Llenar formulario (solo para mostrar)
+        llenarFormulario(datos);
+        
+        // Registrar automáticamente después de breve delay
+        setTimeout(() => {
+          registrarCamion(datos, true);
+        }, 500);
+      }
+    } else {
+      // No tiene prefijo válido, solo llenar formulario
+      const datos = extraerDatosDeCodigo(codigo);
+      if (datos.numeroCamion || datos.nombreRuta) {
+        // Verificar si es ruta santa fe 3
+        if (esRutaSantaFe3(datos.nombreRuta)) {
+          mostrarNotificacion('🟢 ¡Ruta Titular detectada!', 'info');
+        }
+        
+        // Verificar si es tipo apoyo
+        if (esTipoApoyo(datos.tipoCarga)) {
+          mostrarNotificacion('🔴 ¡Tipo Apoyo detectado!', 'warning');
+        }
+        
+        // Verificar duplicado
+        if (datos.numeroCamion) {
+          const duplicado = verificarDuplicado(datos.numeroCamion);
+          if (duplicado) {
+            mostrarErrorDuplicado(duplicado, false);
+          }
+        }
+        
+        cambiarModoRegistro('manual');
+        llenarFormulario(datos);
+        mostrarNotificacion('Código procesado. Complete los datos y presione "Registrar Manual"', 'warning');
+      } else {
+        mostrarNotificacion('Formato de código no reconocido. Ingrese datos manualmente.', 'danger');
+      }
+    }
+  }
+
+  // Parsear código con prefijo
+  function parsearCodigoConPrefijo(codigo) {
+    const partes = codigo.split('-');
+    
+    if (partes.length < 4) {
+      mostrarNotificacion('Formato de código incompleto', 'warning');
+      return null;
+    }
+    
+    const datos = {
+      numeroCamion: partes[1] || '',
+      nombreRuta: partes[2] || '',
+      carril: '',
+      tipoCarga: partes[4] || ''
+    };
+    
+    // Procesar carril (puede ser número o letra)
+    const carrilInput = partes[3] || '';
+    if (carrilInput.match(/^[0-9]+$/)) {
+      datos.carril = carrilInput;
+    } else {
+      // Convertir letra a número
+      for (const [num, letra] of Object.entries(mapaCarriles)) {
+        if (letra === carrilInput.toUpperCase()) {
+          datos.carril = num;
+          break;
+        }
+      }
+      // Si no se encuentra, usar como está
+      if (!datos.carril && carrilInput) {
+        datos.carril = carrilInput;
+      }
+    }
+    
+    // Convertir ruta a formato legible
+    datos.nombreRuta = datos.nombreRuta.replace(/_/g, ' ').replace(/\b\w/g, l => l.toLowerCase());
+    
+    return datos;
+  }
+
+  // Extraer datos de código sin prefijo específico
+  function extraerDatosDeCodigo(codigo) {
+    const datos = {
+      numeroCamion: '',
+      nombreRuta: '',
+      carril: '',
+      tipoCarga: ''
+    };
+    
+    // Intentar extraer número de camión
+    const numeroMatch = codigo.match(/\b(\d{2,4})\b/);
+    if (numeroMatch) {
+      datos.numeroCamion = numeroMatch[1];
+    }
+    
+    // Intentar extraer otros datos
+    const partes = codigo.split(/[-\s]+/);
+    if (partes.length > 1) {
+      // Buscar posible ruta (palabras después del número)
+      const palabras = codigo.split(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ]+/);
+      if (palabras.length > 1) {
+        datos.nombreRuta = palabras.slice(1, 3).join(' ') || 'Ruta Desconocida';
+      }
+    }
+    
+    return datos;
+  }
+
+  // Llenar formulario con datos
+  function llenarFormulario(datos) {
+    document.getElementById('numeroCamion').value = datos.numeroCamion || '';
+    document.getElementById('nombreRuta').value = datos.nombreRuta || '';
+    document.getElementById('carril').value = datos.carril || '';
+    document.getElementById('tipoCarga').value = datos.tipoCarga || '';
+    
+    // Aplicar estilos especiales según tipo de carga
+    aplicarEstilosFormulario(datos.tipoCarga, datos.nombreRuta);
+    
+    // Verificar duplicado al llenar
+    if (datos.numeroCamion) {
+      verificarDuplicadoEnTiempoReal(datos.numeroCamion);
+    }
+  }
+
+  // Aplicar estilos al formulario según tipo de carga y ruta
+  function aplicarEstilosFormulario(tipoCarga, nombreRuta) {
+    const formContainer = document.getElementById('camionForm').parentElement;
+    const tipoApoyoIndicator = document.getElementById('tipoApoyoIndicator');
+    const inputRuta = document.getElementById('nombreRuta');
+    const inputTipoCarga = document.getElementById('tipoCarga');
+    
+    // Quitar clases anteriores
+    formContainer.classList.remove('manual-mode', 'auto-mode', 'error-mode', 'apoyo-mode');
+    tipoApoyoIndicator.classList.add('d-none');
+    inputRuta.style.backgroundColor = '';
+    inputRuta.style.borderColor = '';
+    inputTipoCarga.style.backgroundColor = '';
+    inputTipoCarga.style.borderColor = '';
+    
+    // Aplicar estilos según tipo
+    if (esTipoApoyo(tipoCarga)) {
+      formContainer.classList.add('apoyo-mode');
+      tipoApoyoIndicator.classList.remove('d-none');
+      inputTipoCarga.style.backgroundColor = '#ffe6e6';
+      inputTipoCarga.style.borderColor = '#dc3545';
+    }
+    
+    // Aplicar estilos según ruta
+    if (esRutaSantaFe3(nombreRuta)) {
+      inputRuta.style.backgroundColor = '#d4edda';
+      inputRuta.style.borderColor = '#198754';
+    }
+  }
+
+  // Verificar duplicado en tiempo real
+  function verificarDuplicadoEnTiempoReal(numeroCamion) {
+    if (!numeroCamion) return;
+    
+    const duplicado = verificarDuplicado(numeroCamion);
+    if (duplicado) {
+      mostrarErrorDuplicado(duplicado, false);
+    } else {
+      limpiarErrorDuplicado();
+    }
+  }
+
+  // Cambiar modo de registro
+  function cambiarModoRegistro(modo) {
+    modoActual = modo;
+    const formContainer = document.getElementById('camionForm').parentElement;
+    const modoBadge = document.getElementById('registroMode');
+    const btnRegistrar = document.getElementById('btnRegistrar');
+    
+    // Remover clases anteriores (excepto apoyo-mode si aplica)
+    const esApoyo = formContainer.classList.contains('apoyo-mode');
+    formContainer.classList.remove('manual-mode', 'auto-mode', 'error-mode');
+    
+    if (modo === 'auto') {
+      formContainer.classList.add('auto-mode');
+      modoBadge.textContent = 'Registro Automático';
+      modoBadge.className = 'badge bg-success';
+      btnRegistrar.disabled = true;
+      btnRegistrar.innerHTML = '<span style="font-size: 1.2rem;">🤖</span> Registro Automático';
+    } else {
+      formContainer.classList.add('manual-mode');
+      modoBadge.textContent = 'Modo Manual';
+      modoBadge.className = 'badge bg-warning';
+      btnRegistrar.disabled = false;
+      btnRegistrar.innerHTML = '<span style="font-size: 1.2rem;">✓</span> Registrar Manual';
+    }
+    
+    // Restaurar modo apoyo si aplica
+    if (esApoyo) {
+      formContainer.classList.add('apoyo-mode');
+    }
+  }
+
+  // Función para testear códigos
+  function testCode(codigo) {
+    mostrarNotificacion(`Probando código: ${codigo}`, 'info');
+    
+    // Simular entrada manual
+    document.getElementById('barcodeInput').value = codigo;
+    
+    // Procesar el código
+    procesarCodigoBarras(codigo);
+    
+    // Efecto visual en el escáner
+    const scannerContainer = document.getElementById('scannerContainer');
+    scannerContainer.style.borderColor = '#198754';
+    scannerContainer.style.boxShadow = '0 0 15px rgba(25, 135, 84, 0.5)';
+    
+    setTimeout(() => {
+      scannerContainer.style.borderColor = '#0d6efd';
+      scannerContainer.style.boxShadow = 'none';
+    }, 1000);
+  }
+
+  // Función para limpiar formulario
+  function limpiarFormulario() {
+    document.getElementById('camionForm').reset();
+    limpiarErrorDuplicado();
+    cambiarModoRegistro('manual');
+    
+    // Limpiar estilos especiales
+    const formContainer = document.getElementById('camionForm').parentElement;
+    const tipoApoyoIndicator = document.getElementById('tipoApoyoIndicator');
+    const inputRuta = document.getElementById('nombreRuta');
+    const inputTipoCarga = document.getElementById('tipoCarga');
+    
+    formContainer.classList.remove('apoyo-mode');
+    tipoApoyoIndicator.classList.add('d-none');
+    inputRuta.style.backgroundColor = '';
+    inputRuta.style.borderColor = '';
+    inputTipoCarga.style.backgroundColor = '';
+    inputTipoCarga.style.borderColor = '';
+    
+    mostrarNotificacion('Formulario limpiado', 'info');
+  }
+
+  // Función para mostrar notificación
+  function mostrarNotificacion(mensaje, tipo = 'success') {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${tipo} shadow-lg position-fixed`;
+    alertDiv.style.cssText = `
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      animation: slideIn 0.3s ease-out, fadeOut 0.5s ease-out 2.5s forwards;
+      border-radius: 0.5rem;
+      min-width: 300px;
+    `;
+    
+    let icono = '✓';
+    if (tipo === 'warning') icono = '⚠️';
+    if (tipo === 'info') icono = 'ℹ️';
+    if (tipo === 'danger') icono = '❌';
+    
+    alertDiv.innerHTML = `
+      <div class="d-flex align-items-center">
+        <span style="font-size: 1.5rem; margin-right: 10px;">${icono}</span>
+        <span>${mensaje}</span>
+      </div>
+    `;
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => {
+      if (alertDiv.parentNode) {
+        alertDiv.remove();
+      }
+    }, 3000);
+  }
+
+  // Función para registrar un camión
+  function registrarCamion(datos, esAutomatico = false) {
+    const { numeroCamion, nombreRuta, carril, tipoCarga } = datos;
+    const horaLlegada = new Date().toLocaleTimeString();
+
+    // Validaciones básicas
+    if (!numeroCamion || !nombreRuta || !carril) {
+      const mensaje = esAutomatico ? 
+        'Error en código: Faltan datos. Complete manualmente.' : 
+        'Faltan datos requeridos';
+      mostrarNotificacion(mensaje, 'danger');
+      return false;
+    }
+
+    // Verificar duplicado (segunda verificación por seguridad)
+    const duplicado = verificarDuplicado(numeroCamion);
+    if (duplicado) {
+      mostrarErrorDuplicado(duplicado, esAutomatico);
+      return false;
+    }
+
+    // Crear nuevo camión
+    const nuevoCamion = {
+      numeroCamion,
+      nombreRuta,
+      carril,
+      horaLlegada,
+      carta: tipoCarga || "—",
+      horaSalida: "—"
+    };
+
+    // Obtener camiones existentes
+    const camiones = JSON.parse(localStorage.getItem("camiones") || "[]");
+    
+    // Agregar nuevo camión
+    camiones.push(nuevoCamion);
+    localStorage.setItem("camiones", JSON.stringify(camiones));
+
+    // Mostrar notificación especial según tipo
+    const letraCarril = mapaCarriles[carril] || carril;
+    let mensaje = '';
+    let tipoNotificacion = 'success';
+    
+    if (esTipoApoyo(tipoCarga)) {
+      mensaje = `🔴 CAMIÓN DE APOYO #${numeroCamion} registrado en Carril ${letraCarril}`;
+      tipoNotificacion = 'danger';
+    } else if (esRutaSantaFe3(nombreRuta)) {
+      mensaje = `🟢 Ruta Santa Fe 3: Camión #${numeroCamion} registrado en Carril ${letraCarril}`;
+    } else {
+      mensaje = esAutomatico ? 
+        `✅ Camión ${numeroCamion} registrado AUTOMÁTICAMENTE en Carril ${letraCarril}` :
+        `✅ Camión ${numeroCamion} registrado manualmente en Carril ${letraCarril}`;
+    }
+    
+    mostrarNotificacion(mensaje, tipoNotificacion);
+
+    // Actualizar tabla
+    actualizarTabla();
+
+    // Limpiar formulario si fue automático
+    if (esAutomatico) {
+      setTimeout(() => {
+        limpiarFormulario();
+      }, 1000);
+    } else {
+      // Solo limpiar el número para permitir nuevo registro
+      document.getElementById('numeroCamion').value = '';
+    }
+    
+    return true;
+  }
+
+  // Función para actualizar la tabla
+  function actualizarTabla() {
+    const camiones = JSON.parse(localStorage.getItem("camiones") || "[]");
+    const tablaBody = document.getElementById("tablaBody");
+    const emptyMessage = document.getElementById("emptyMessage");
+    
+    // Limpiar tabla
+    tablaBody.innerHTML = "";
+    
+    if (camiones.length === 0) {
+      emptyMessage.style.display = 'block';
+      return;
+    }
+    
+    emptyMessage.style.display = 'none';
+    
+    // Ordenar camiones por hora de llegada (más recientes primero)
+    camiones.sort((a, b) => new Date(b.horaLlegada) - new Date(a.horaLlegada));
+    
+    // Contadores para estadísticas
+    let contadorSantaFe3 = 0;
+    let contadorApoyo = 0;
+    
+    // Agregar filas
+    camiones.forEach((camion, index) => {
+      // Verificar si pasa el filtro activo
+      let mostrarFila = true;
+      if (filtroActivo === 'santa-fe-3' && !esRutaSantaFe3(camion.nombreRuta)) {
+        mostrarFila = false;
+      }
+      if (filtroActivo === 'apoyo' && !esTipoApoyo(camion.carta)) {
+        mostrarFila = false;
+      }
+      
+      if (!mostrarFila) return;
+      
+      // Actualizar contadores
+      if (esRutaSantaFe3(camion.nombreRuta)) contadorSantaFe3++;
+      if (esTipoApoyo(camion.carta)) contadorApoyo++;
+      
+      const fila = document.createElement("tr");
+      const letraCarril = mapaCarriles[camion.carril] || camion.carril;
+      const estaActivo = camion.horaSalida === "—";
+      
+      // Aplicar clases especiales
+      let clasesEspeciales = '';
+      if (esRutaSantaFe3(camion.nombreRuta)) {
+        clasesEspeciales += ' ruta-santa-fe-3';
+      }
+      if (esTipoApoyo(camion.carta)) {
+        clasesEspeciales += ' tipo-apoyo';
+      }
+      
+      fila.className = clasesEspeciales;
+      
+      fila.innerHTML = `
+        <td>${index + 1}</td>
+        <td><strong>${camion.numeroCamion}</strong></td>
+        <td>
+          ${camion.nombreRuta}
+          ${esRutaSantaFe3(camion.nombreRuta) ? '<span class="badge badge-ruta-especial ms-1">SF3</span>' : ''}
+        </td>
+        <td><span class="badge-carril">${letraCarril}</span></td>
+        <td>
+          ${camion.carta || '—'}
+          ${esTipoApoyo(camion.carta) ? '<span class="badge badge-tipo-apoyo ms-1">APOYO</span>' : ''}
+        </td>
+        <td>${camion.horaLlegada}</td>
+        <td>${camion.horaSalida || '—'}</td>
+        <td>
+          <span class="badge ${estaActivo ? 'bg-success' : 'bg-secondary'}">
+            ${estaActivo ? 'Activo' : 'Completado'}
+          </span>
+        </td>
+        <td>
+          <button class="btn btn-sm ${estaActivo ? "btn-outline-primary" : "btn-success"}" 
+                  onclick="registrarSalida(${camiones.indexOf(camion)})"
+                  ${!estaActivo ? "disabled" : ""}>
+            ${estaActivo ? "🚀 Salida" : "✅ Completado"}
+          </button>
+        </td>
+      `;
+      tablaBody.appendChild(fila);
+    });
+    
+    // Actualizar título con estadísticas
+    const tituloTabla = document.querySelector('.card-header span');
+    if (filtroActivo === 'todos') {
+      tituloTabla.textContent = `📋 Historial de Llegadas (${camiones.length} camiones)`;
+    } else if (filtroActivo === 'santa-fe-3') {
+      tituloTabla.textContent = `🟢 Ruta Santa Fe 3 (${contadorSantaFe3} camiones)`;
+    } else if (filtroActivo === 'apoyo') {
+      tituloTabla.textContent = `🔴 Camiones de Apoyo (${contadorApoyo} camiones)`;
+    }
+  }
+
+  // Funciones de filtrado
+  function filtrarRutaSantaFe3() {
+    filtroActivo = 'santa-fe-3';
+    actualizarTabla();
+    mostrarNotificacion('Mostrando solo camiones de la ruta Santa Fe 3', 'info');
+  }
+
+  function filtrarTipoApoyo() {
+    filtroActivo = 'apoyo';
+    actualizarTabla();
+    mostrarNotificacion('Mostrando solo camiones de tipo Apoyo', 'warning');
+  }
+
+  function quitarFiltros() {
+    filtroActivo = 'todos';
+    actualizarTabla();
+    mostrarNotificacion('Mostrando todos los camiones', 'info');
+  }
+
+  // Función para registrar salida
+  function registrarSalida(index) {
+    const camiones = JSON.parse(localStorage.getItem("camiones") || "[]");
+    
+    if (camiones[index]) {
+      const horaSalida = new Date().toLocaleTimeString();
+      camiones[index].horaSalida = horaSalida;
+      localStorage.setItem("camiones", JSON.stringify(camiones));
+      
+      mostrarNotificacion(`✅ Salida registrada para camión ${camiones[index].numeroCamion}`);
+      actualizarTabla();
+    }
+  }
+
+  // Función para limpiar historial
+  function limpiarHistorial() {
+    if (confirm("¿Estás seguro de que quieres limpiar todo el historial? Esta acción no se puede deshacer.")) {
+      localStorage.removeItem("camiones");
+      mostrarNotificacion('Historial limpiado correctamente', 'warning');
+      actualizarTabla();
+    }
+  }
+
+  // Función para exportar datos
+  function exportarDatos() {
+    const camiones = JSON.parse(localStorage.getItem("camiones") || "[]");
+    
+    if (camiones.length === 0) {
+      mostrarNotificacion('No hay datos para exportar', 'warning');
+      return;
+    }
+    
+    // Convertir a CSV
+    let csv = 'Número,Ruta,Carril,Tipo Carga,Llegada,Salida,Estado\n';
+    camiones.forEach(camion => {
+      const letraCarril = mapaCarriles[camion.carril] || camion.carril;
+      const estado = camion.horaSalida === "—" ? "Activo" : "Completado";
+      csv += `"${camion.numeroCamion}","${camion.nombreRuta}","${letraCarril}","${camion.carta || ''}","${camion.horaLlegada}","${camion.horaSalida || ''}","${estado}"\n`;
+    });
+    
+    // Crear archivo
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `camiones_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    
+    mostrarNotificacion('Datos exportados correctamente');
+  }
+
+  // Evento submit del formulario (registro manual)
+  document.getElementById("camionForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    const numeroCamion = document.getElementById("numeroCamion").value.trim();
+    const nombreRuta = document.getElementById("nombreRuta").value.trim();
+    const carril = document.getElementById("carril").value;
+    const tipoCarga = document.getElementById("tipoCarga").value.trim();
+
+    const datos = {
+      numeroCamion,
+      nombreRuta,
+      carril,
+      tipoCarga
+    };
+
+    registrarCamion(datos, false);
+  });
+
+  // Detectar cambios en el tipo de carga para aplicar estilos
+  document.getElementById('tipoCarga').addEventListener('input', function() {
+    const tipoCarga = this.value.trim();
+    const nombreRuta = document.getElementById('nombreRuta').value.trim();
+    aplicarEstilosFormulario(tipoCarga, nombreRuta);
+  });
+
+  // Detectar cambios en la ruta para aplicar estilos
+  document.getElementById('nombreRuta').addEventListener('input', function() {
+    const nombreRuta = this.value.trim();
+    const tipoCarga = document.getElementById('tipoCarga').value.trim();
+    aplicarEstilosFormulario(tipoCarga, nombreRuta);
+  });
+
+  // Entrada manual de código de barras
+  document.getElementById('barcodeInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const codigo = this.value.trim();
+      if (codigo) {
+        handleScannedCode(codigo);
+        this.value = '';
+      }
+    }
+  });
+
+  // Detectar cambios en el número de camión para verificar duplicados en tiempo real
+  document.getElementById('numeroCamion').addEventListener('input', function() {
+    const numero = this.value.trim();
+    if (numero) {
+      verificarDuplicadoEnTiempoReal(numero);
+    } else {
+      limpiarErrorDuplicado();
+    }
+    
+    // Cambiar a modo manual si se edita
+    if (modoActual === 'auto') {
+      cambiarModoRegistro('manual');
+      mostrarNotificacion('Modo cambiado a manual. Presione "Registrar Manual".', 'info');
+    }
+  });
+
+  // Detectar cambios manuales en otros campos
+  document.querySelectorAll('#carril').forEach(element => {
+    element.addEventListener('input', function() {
+      if (modoActual === 'auto') {
+        cambiarModoRegistro('manual');
+        mostrarNotificacion('Modo cambiado a manual. Presione "Registrar Manual".', 'info');
+      }
+    });
+  });
+
+  // Inicializar la aplicación al cargar
+  document.addEventListener('DOMContentLoaded', function() {
+    initScanner();
+    actualizarTabla();
+    
+    // Poner foco en el input de código de barras
+    document.getElementById('barcodeInput').focus();
+    
+    // Detener el escáner al salir de la página
+    window.addEventListener('beforeunload', stopScanner);
+  });
+</script>
+</body>
+</html>
