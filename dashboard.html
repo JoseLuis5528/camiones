@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Camiones Registrados</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { background-color: #f8f9fa; }
+    .carril-columna { 
+      min-width: 250px; 
+      margin-right: 0.5rem; 
+      padding: 1rem;
+    }
+    .carril-letra { 
+      font-size: 1.5rem; 
+      font-weight: bold; 
+      margin-bottom: 1rem; 
+      color: #0d6efd; 
+      text-align: center;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid #0d6efd;
+    }
+    .tarjeta-camion { 
+      width: 100%; 
+      margin-bottom: 1rem; 
+    }
+    .card-img-top { 
+      height: 120px; 
+      object-fit: cover; 
+    }
+    .card-body { 
+      padding: 1rem; 
+    }
+    .card-title { 
+      font-size: 1rem; 
+      margin-bottom: 0.5rem; 
+      color: #333;
+    }
+    .card p { 
+      font-size: 0.9rem; 
+      margin-bottom: 0.4rem; 
+      color: #666;
+    }
+    .card {
+      border: 1px solid #dee2e6;
+      transition: transform 0.2s;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    #dashboardCarriles {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      background-color: #ffffff;
+      border: 1px solid #dee2e6;
+      border-radius: 8px;
+      padding: 1rem;
+      min-height: 400px;
+    }
+    .carril-columna:not(:last-child) {
+      border-right: 2px dashed #dee2e6;
+    }
+    .btn-group {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      min-width: 150px;
+    }
+    .empty-message {
+      text-align: center;
+      color: #6c757d;
+      font-style: italic;
+      padding: 20px;
+    }
+    .carril-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .badge {
+      font-size: 0.8rem;
+    }
+    .modal-content {
+      border-radius: 10px;
+    }
+    .modal-header {
+      background-color: #f8f9fa;
+      border-bottom: 1px solid #dee2e6;
+    }
+    /* Estilos para camión encontrado */
+    .camion-encontrado {
+      border: 3px solid #198754 !important;
+      box-shadow: 0 0 15px rgba(25, 135, 84, 0.5) !important;
+      transform: scale(1.02);
+      transition: all 0.3s ease;
+    }
+    .carril-con-camion-encontrado {
+      background-color: rgba(25, 135, 84, 0.05);
+      border-right: 2px solid #198754 !important;
+    }
+    .carril-con-camion-encontrado .carril-letra {
+      color: #198754;
+      border-bottom-color: #198754;
+    }
+    .badge-encontrado {
+      background-color: #198754 !important;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+    /* Estilos para buscador */
+    .search-container {
+      max-width: 500px;
+      margin: 0 auto 20px auto;
+    }
+    .search-input-group {
+      position: relative;
+    }
+    .search-icon {
+      position: absolute;
+      left: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #6c757d;
+      z-index: 3;
+    }
+    .clear-search {
+      position: absolute;
+      right: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: #6c757d;
+      cursor: pointer;
+      z-index: 3;
+    }
+    .clear-search:hover {
+      color: #dc3545;
+    }
+    #searchInput {
+      padding-left: 45px;
+      padding-right: 45px;
+      border-radius: 25px;
+      height: 50px;
+      font-size: 1.1rem;
+    }
+    .found-indicator {
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      background-color: #198754;
+      color: white;
+      border-radius: 50%;
+      width: 25px;
+      height: 25px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      z-index: 2;
+    }
+    
+    /* ESTILOS ESPECIALES PARA Titulares- COLOR VERDE */
+    .ruta-santa-fe-3 {
+      border: 3px solid #198754 !important;
+      box-shadow: 0 0 10px rgba(25, 135, 84, 0.3) !important;
+    }
+    
+    .ruta-santa-fe-3 .card-title {
+      color: #198754 !important;
+      font-weight: bold;
+    }
+    
+    .ruta-santa-fe-3 .card-body {
+      background-color: rgba(25, 135, 84, 0.05);
+    }
+    
+    .ruta-santa-fe-3 .badge-ruta {
+      background-color: #198754;
+      color: white !important;
+      font-weight: bold;
+    }
+    
+    /* ESTILOS ESPECIALES PARA TIPO APOYO - COLOR ROJO */
+    .tipo-apoyo {
+      border: 3px solid #dc3545 !important;
+      box-shadow: 0 0 10px rgba(220, 53, 69, 0.3) !important;
+      animation: pulseRed 2s infinite;
+    }
+    
+    @keyframes pulseRed {
+      0% { box-shadow: 0 0 5px rgba(220, 53, 69, 0.3); }
+      50% { box-shadow: 0 0 15px rgba(220, 53, 69, 0.5); }
+      100% { box-shadow: 0 0 5px rgba(220, 53, 69, 0.3); }
+    }
+    
+    .tipo-apoyo .card-title {
+      color: #dc3545 !important;
+      font-weight: bold;
+    }
+    
+    .tipo-apoyo .card-body {
+      background-color: rgba(220, 53, 69, 0.05);
+    }
+    
+    .tipo-apoyo .badge-tipo {
+      background-color: #dc3545;
+      color: white !important;
+      font-weight: bold;
+    }
+    
+
+    /* Si es Titular Y Apoyo (combinación) */
+    .ruta-santa-fe-3.tipo-apoyo {
+      border: 3px solid #8b4513 !important;
+      border-left: 3px solid #198754 !important;
+      border-right: 3px solid #dc3545 !important;
+      box-shadow: 0 0 15px rgba(25, 135, 84, 0.3), 0 0 15px rgba(220, 53, 69, 0.3) !important;
+    }
+    
+    .ruta-santa-fe-3.tipo-apoyo .card-title {
+      background: linear-gradient(90deg, #198754, #dc3545);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    /* Indicadores visuales */
+    .indicador-especial {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      z-index: 1;
+    }
+    
+    .indicador-santa-fe-3 {
+      background-color: #198754;
+      box-shadow: 0 0 5px #198754;
+    }
+    
+    .indicador-apoyo {
+      background-color: #dc3545;
+      box-shadow: 0 0 5px #dc3545;
+    }
+    
+    .indicador-combinado {
+      background: linear-gradient(90deg, #198754 50%, #dc3545 50%);
+      box-shadow: 0 0 5px #198754, 0 0 5px #dc3545;
+    }
+    
+    /* Filtros especiales */
+    .filtros-especiales {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+    
+    .filtro-btn {
+      min-width: 120px;
+    }
+    
+    /* Loading spinner */
+    .loading-spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #0d6efd;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-left: 10px;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* Panel de depuración */
+    .debug-panel {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      background: rgba(0,0,0,0.8);
+      color: white;
+      padding: 10px;
+      border-radius: 5px;
+      font-size: 12px;
+      max-width: 300px;
+      z-index: 1000;
+      display: none;
+    }
+    
+    .debug-toggle {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      background: #0d6efd;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
+      z-index: 1001;
+    }
+
+    /* Botón de registro */
+    .btn-registrar {
+      margin: 20px auto;
+      display: block;
+      max-width: 250px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Botón para depuración -->
+<button class="debug-toggle" onclick="toggleDebug()">🐛</button>
+<div id="debugPanel" class="debug-panel">
+  <h6>Depuración Firebase</h6>
+  <div id="debugInfo"></div>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+<!-- Modal para contraseña -->
+<div class="modal fade" id="passwordModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">🔐 Verificación de Administrador</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label for="adminPassword" class="form-label">Contraseña de Administrador</label>
+          <input type="password" class="form-control" id="adminPassword" placeholder="Ingresa la contraseña">
+          <div class="form-text">Contraseña requerida para realizar esta acción.</div>
+        </div>
+        <div id="passwordError" class="alert alert-danger d-none" role="alert">
+          Contraseña incorrecta. Intenta nuevamente.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" onclick="verificarContrasena()">Verificar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid py-3">
+  <h2 class="text-center mb-3">📋 Camiones Registrados</h2>
+
+  <!-- Botón de prueba para verificar Firebase -->
+  <div class="text-center mb-3">
+    <button class="btn btn-info btn-sm" onclick="testFirebaseConnection()">
+      🔍 Probar Conexión Firebase
+    </button>
+    <button class="btn btn-warning btn-sm" onclick="verificarDatosFirebase()">
+      📊 Ver Datos en Firebase
+    </button>
+    <span id="connectionStatus" class="badge ms-2"></span>
+  </div>
+
+  <!-- Buscador -->
+  <div class="search-container">
+    <div class="search-input-group">
+      <span class="search-icon">🔍</span>
+      <input type="text" 
+             class="form-control form-control-lg" 
+             id="searchInput" 
+             placeholder="Buscar camión por número (ej: 421)..."
+             autocomplete="off">
+      <button class="clear-search" onclick="limpiarBusqueda()" style="display: none;">✕</button>
+    </div>
+    <div class="mt-2 text-center">
+      <small class="text-muted">Ingresa el número del camión o pasa el lector sobre el código de barras</small>
+    </div>
+  </div>
+
+  <!-- Filtros especiales -->
+  <div class="filtros-especiales">
+    <button class="btn btn-outline-success filtro-btn" onclick="filtrarSantaFe3()">
+      🟢 Ruta Titular
+    </button>
+    <button class="btn btn-outline-danger filtro-btn" onclick="filtrarApoyo()">
+      🔴 Tipo Apoyo
+    </button>
+    <button class="btn btn-outline-primary filtro-btn" onclick="quitarFiltros()">
+      📋 Todos
+    </button>
+  </div>
+
+  <!-- Botones de control -->
+  <div class="btn-group">
+    <select id="carrilSeleccionado" class="form-select w-auto">
+      <option value="">Seleccionar carril a limpiar</option>
+      <option value="A">Carril A</option>
+      <option value="B">Carril B</option>
+      <option value="C">Carril C</option>
+      <option value="D">Carril D</option>
+      <option value="E">Carril E</option>
+      <option value="F">Carril F</option>
+      <option value="G">Carril G</option>
+      <option value="H">Carril H</option>
+      <option value="I">Carril I</option>
+      <option value="J">Carril J</option>
+    </select>
+    <button class="btn btn-warning" onclick="solicitarContrasena('limpiarCarril')">🧹 Limpiar Carril</button>
+    <button class="btn btn-danger" onclick="solicitarContrasena('limpiarTodo')">🧼 Limpiar Todo</button>
+    <button class="btn btn-success" onclick="actualizarDashboard()">🔄 Actualizar</button>
+    <span id="loadingSpinner" class="loading-spinner" style="display: none;"></span>
+  </div>
+
+  <!-- Resultado de búsqueda -->
+  <div id="searchResult" class="alert alert-info text-center mb-3" style="display: none;"></div>
+
+  <!-- Dashboard de carriles -->
+  <div id="dashboardCarriles">
+    <div class="empty-message w-100">
+      <div class="spinner-border text-primary mb-2" role="status">
+        <span class="visually-hidden">Cargando...</span>
+      </div>
+      <p>Conectando con Firebase...</p>
+      <small id="connectionDetails" class="text-muted"></small>
+    </div>
+  </div>
+
+  <!-- Botón para registrar nuevos camiones -->
+  <a href="index.html" class="btn btn-primary btn-lg btn-registrar">
+    ➕ Registrar Nuevo Camión
+  </a>
+</div>
+
+<!-- Incluir Bootstrap JS para el modal -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+  // Variables globales
+  let accionPendiente = null;
+  const PASSWORD_CORRECTA = "admin123";
+  let camionEncontrado = null;
+  let filtroActivo = 'todos';
+  let db = null;
+  let firebaseInitialized = false;
+  
+  // Configuración de Firebase - MISMA QUE EN index.html
+  const firebaseConfig = {
+    apiKey: "AIzaSyD6m97z4Z0HDzVIS5ojAoVfmesqCUxy5KU",
+    authDomain: "action-tracker-3ccd8.firebaseapp.com",
+    projectId: "action-tracker-3ccd8",
+    storageBucket: "action-tracker-3ccd8.firebasestorage.app",
+    messagingSenderId: "820818816895",
+    appId: "1:820818816895:web:d0f7565d2c3cb5d257344a",
+    measurementId: "G-6KB5BTJZK3"
+  };
+
+  // Mapa de carriles
+  const mapaCarriles = {
+    "1": "A", "2": "B", "3": "C", "4": "D",
+    "5": "E", "6": "F", "7": "G", "8": "H",
+    "9": "I", "10": "J"
+  };
+
+  // =================== INICIALIZACIÓN ===================
+
+  async function initializeFirebase() {
+    try {
+      updateDebugInfo('Inicializando Firebase...');
+      updateConnectionStatus('Conectando...', 'warning');
+      
+      // Verificar si Firebase ya está inicializado
+      if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+        updateDebugInfo('Firebase app inicializada');
+      } else {
+        updateDebugInfo('Firebase app ya estaba inicializada');
+      }
+      
+      // Inicializar Firestore
+      db = firebase.firestore();
+      
+      // Configurar persistencia (opcional)
+      try {
+        await db.enablePersistence({ synchronizeTabs: true });
+        updateDebugInfo('Persistencia habilitada');
+      } catch (err) {
+        updateDebugInfo('Persistencia no disponible: ' + err.message);
+      }
+      
+      firebaseInitialized = true;
+      updateDebugInfo('✅ Firebase inicializado correctamente');
+      updateConnectionStatus('Conectado', 'success');
+      
+      return true;
+    } catch (error) {
+      console.error('Error inicializando Firebase:', error);
+      updateDebugInfo('❌ Error inicializando Firebase: ' + error.message);
+      updateConnectionStatus('Error', 'danger');
+      firebaseInitialized = false;
+      return false;
+    }
+  }
+
+  // =================== FUNCIONES DE DEPURACIÓN ===================
+
+  function updateDebugInfo(message) {
+    const debugInfo = document.getElementById('debugInfo');
+    const timestamp = new Date().toLocaleTimeString();
+    debugInfo.innerHTML += `<div><small>${timestamp}:</small> ${message}</div>`;
+    
+    // Mantener solo los últimos 10 mensajes
+    const messages = debugInfo.querySelectorAll('div');
+    if (messages.length > 10) {
+      messages[0].remove();
+    }
+    
+    // También mostrar en consola
+    console.log('Firebase Debug:', message);
+  }
+
+  function toggleDebug() {
+    const panel = document.getElementById('debugPanel');
+    panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+  }
+
+  function updateConnectionStatus(text, type) {
+    const status = document.getElementById('connectionStatus');
+    const details = document.getElementById('connectionDetails');
+    
+    status.textContent = text;
+    status.className = 'badge';
+    
+    if (type === 'success') {
+      status.classList.add('bg-success');
+      details.textContent = 'Conexión establecida con Firebase';
+    } else if (type === 'warning') {
+      status.classList.add('bg-warning');
+      details.textContent = text;
+    } else if (type === 'danger') {
+      status.classList.add('bg-danger');
+      details.textContent = 'Error de conexión: ' + text;
+    } else {
+      status.classList.add('bg-secondary');
+    }
+  }
+
+  // =================== FUNCIONES FIREBASE ===================
+
+  async function testFirebaseConnection() {
+    updateDebugInfo('Probando conexión con Firebase...');
+    
+    try {
+      if (!firebaseInitialized) {
+        await initializeFirebase();
+      }
+      
+      // Intentar una consulta simple
+      const testQuery = await db.collection('camiones').limit(1).get();
+      
+      updateDebugInfo(`✅ Conexión exitosa. Colección encontrada: ${!testQuery.empty ? 'Con datos' : 'Vacía'}`);
+      updateConnectionStatus('Conectado ✓', 'success');
+      
+      return true;
+    } catch (error) {
+      updateDebugInfo(`❌ Error de conexión: ${error.message}`);
+      updateConnectionStatus('Error de conexión', 'danger');
+      
+      // Mostrar ayuda específica según el error
+      if (error.code === 'permission-denied') {
+        updateDebugInfo('⚠️ Error de permisos: Verifica las reglas de Firestore');
+        mostrarNotificacion('Error de permisos: Verifica las reglas de Firestore', 'danger');
+      } else if (error.code === 'failed-precondition') {
+        updateDebugInfo('⚠️ Firebase no inicializado correctamente');
+        mostrarNotificacion('Error de inicialización de Firebase', 'danger');
+      }
+      
+      return false;
+    }
+  }
+
+  async function verificarDatosFirebase() {
+    updateDebugInfo('Verificando datos en Firebase...');
+    
+    try {
+      const snapshot = await db.collection('camiones').get();
+      const camiones = [];
+      
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        camiones.push({ 
+          id: doc.id, 
+          ...data,
+          // Asegurar que los campos estén presentes
+          numeroCamion: data.numeroCamion || data.numero || 'Sin número',
+          nombreRuta: data.nombreRuta || data.ruta || 'Sin ruta',
+          carril: data.carril || '1',
+          tipoCarga: data.tipoCarga || data.tipo || 'Sin tipo',
+          horaLlegada: data.horaLlegada || data.hora || '—',
+          horaSalida: data.horaSalida || '—',
+          estado: data.estado || 'activo'
+        });
+      });
+      
+      updateDebugInfo(`📊 Encontrados ${camiones.length} camiones en Firebase`);
+      
+      if (camiones.length > 0) {
+        console.log('Datos completos en Firebase:', camiones);
+        mostrarNotificacion(`Encontrados ${camiones.length} camiones en Firebase`, 'info');
+        
+        // Mostrar todos los datos en el panel de depuración
+        updateDebugInfo('Todos los camiones en Firebase:');
+        camiones.forEach(c => {
+          updateDebugInfo(`- ID: ${c.id}, #${c.numeroCamion}, Carril: ${c.carril}, Ruta: ${c.nombreRuta}, Estado: ${c.estado}`);
+        });
+      } else {
+        mostrarNotificacion('No hay camiones en Firebase', 'warning');
+        updateDebugInfo('⚠️ La colección está vacía');
+      }
+      
+      return camiones;
+    } catch (error) {
+      updateDebugInfo(`❌ Error verificando datos: ${error.message}`);
+      mostrarNotificacion('Error al verificar datos en Firebase', 'danger');
+      return [];
+    }
+  }
+
+  async function obtenerCamiones() {
+    updateDebugInfo('Obteniendo camiones desde Firebase...');
+    
+    try {
+      // Primero intentamos con un orden más genérico
+      const snapshot = await db.collection('camiones').get();
+      
+      const camiones = [];
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        camiones.push({ 
+          id: doc.id,
+          // Asegurar compatibilidad con datos de index.html
+          numeroCamion: data.numeroCamion || data.numero || data.numeroCamionInput || '000',
+          nombreRuta: data.nombreRuta || data.ruta || data.rutaSeleccionada || 'Sin ruta',
+          carril: data.carril || data.carrilSeleccionado || '1',
+          tipoCarga: data.tipoCarga || data.tipo || data.tipoCargaInput || 'Sin tipo',
+          horaLlegada: data.horaLlegada || data.hora || new Date().toLocaleTimeString(),
+          horaSalida: data.horaSalida || '—',
+          estado: data.estado || 'activo',
+          fechaLlegada: data.fechaLlegada || data.timestamp || new Date().toISOString(),
+          // Datos adicionales que podrían estar en index.html
+          fecha: data.fecha || new Date().toLocaleDateString(),
+          hora: data.hora || new Date().toLocaleTimeString(),
+          numero: data.numero || data.numeroCamion,
+          ruta: data.ruta || data.nombreRuta,
+          tipo: data.tipo || data.tipoCarga
+        });
+      });
+      
+      // Ordenar por fecha de llegada (más reciente primero)
+      camiones.sort((a, b) => {
+        const fechaA = a.fechaLlegada || a.timestamp || '';
+        const fechaB = b.fechaLlegada || b.timestamp || '';
+        return new Date(fechaB) - new Date(fechaA);
+      });
+      
+      updateDebugInfo(`✅ Obtenidos ${camiones.length} camiones (formato ajustado)`);
+      console.log('Camiones obtenidos (formato ajustado):', camiones);
+      return camiones;
+    } catch (error) {
+      console.error('Error obteniendo camiones:', error);
+      updateDebugInfo(`❌ Error obteniendo camiones: ${error.message}`);
+      mostrarNotificacion('Error al cargar datos de Firebase', 'danger');
+      return [];
+    }
+  }
+
+  async function buscarCamionFirebase(numero) {
+    try {
+      // Primero buscar por numeroCamion (formato de index.html)
+      let snapshot = await db.collection('camiones')
+        .where('numeroCamion', '==', numero.trim())
+        .limit(1)
+        .get();
+      
+      if (!snapshot.empty) {
+        const doc = snapshot.docs[0];
+        const data = doc.data();
+        updateDebugInfo(`✅ Camión encontrado por 'numeroCamion': ${numero}`);
+        return { id: doc.id, ...data };
+      }
+      
+      // Si no encuentra, buscar por 'numero' (formato alternativo)
+      snapshot = await db.collection('camiones')
+        .where('numero', '==', numero.trim())
+        .limit(1)
+        .get();
+      
+      if (!snapshot.empty) {
+        const doc = snapshot.docs[0];
+        const data = doc.data();
+        updateDebugInfo(`✅ Camión encontrado por 'numero': ${numero}`);
+        return { id: doc.id, ...data };
+      }
+      
+      // Si no encuentra, buscar por cualquier campo que contenga el número
+      snapshot = await db.collection('camiones').get();
+      const todosCamiones = [];
+      snapshot.forEach(doc => {
+        todosCamiones.push({ id: doc.id, ...doc.data() });
+      });
+      
+      const encontrado = todosCamiones.find(c => {
+        return (c.numeroCamion && c.numeroCamion.toString() === numero.trim()) ||
+               (c.numero && c.numero.toString() === numero.trim()) ||
+               (c.numeroCamionInput && c.numeroCamionInput.toString() === numero.trim());
+      });
+      
+      if (encontrado) {
+        updateDebugInfo(`✅ Camión encontrado mediante búsqueda manual: ${numero}`);
+        return encontrado;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error buscando camión:', error);
+      updateDebugInfo(`❌ Error buscando camión: ${error.message}`);
+      return null;
+    }
+  }
+
+  async function limpiarCarrilFirebase(letraCarril) {
+    try {
+      let numeroCarril = null;
+      for (const [key, value] of Object.entries(mapaCarriles)) {
+        if (value === letraCarril) {
+          numeroCarril = key;
+          break;
+        }
+      }
+      
+      if (!numeroCarril) {
+        updateDebugInfo(`❌ No se encontró el número para el carril ${letraCarril}`);
+        return false;
+      }
+      
+      // Buscar camiones en ese carril que no tengan hora de salida
+      const snapshot = await db.collection('camiones').get();
+      const camionesEnCarril = [];
+      
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        const carrilCamion = data.carril || data.carrilSeleccionado;
+        
+        // Verificar si el camión está en el carril y no tiene hora de salida
+        if ((carrilCamion === numeroCarril || carrilCamion === letraCarril) && 
+            (!data.horaSalida || data.horaSalida === '—')) {
+          camionesEnCarril.push(doc.ref);
+        }
+      });
+      
+      if (camionesEnCarril.length === 0) {
+        updateDebugInfo(`✅ No hay camiones activos en el carril ${letraCarril}`);
+        return true;
+      }
+      
+      const batch = db.batch();
+      const horaSalida = new Date().toLocaleTimeString();
+      const fechaSalida = new Date().toISOString();
+      
+      camionesEnCarril.forEach(ref => {
+        batch.update(ref, {
+          horaSalida: horaSalida,
+          fechaSalida: fechaSalida,
+          estado: "completado"
+        });
+      });
+      
+      await batch.commit();
+      updateDebugInfo(`✅ Carril ${letraCarril} limpiado (${camionesEnCarril.length} camiones)`);
+      return true;
+    } catch (error) {
+      console.error('Error limpiando carril:', error);
+      updateDebugInfo(`❌ Error limpiando carril: ${error.message}`);
+      return false;
+    }
+  }
+
+  async function limpiarTodoFirebase() {
+    try {
+      const snapshot = await db.collection('camiones').get();
+      const camionesActivos = [];
+      
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        if (!data.horaSalida || data.horaSalida === '—') {
+          camionesActivos.push(doc.ref);
+        }
+      });
+      
+      if (camionesActivos.length === 0) {
+        updateDebugInfo('✅ No hay camiones activos para limpiar');
+        return true;
+      }
+      
+      const batch = db.batch();
+      const horaSalida = new Date().toLocaleTimeString();
+      const fechaSalida = new Date().toISOString();
+      
+      camionesActivos.forEach(ref => {
+        batch.update(ref, {
+          horaSalida: horaSalida,
+          fechaSalida: fechaSalida,
+          estado: "completado"
+        });
+      });
+      
+      await batch.commit();
+      updateDebugInfo(`✅ Todos los carriles limpiados (${camionesActivos.length} camiones)`);
+      return true;
+    } catch (error) {
+      console.error('Error limpiando todo:', error);
+      updateDebugInfo(`❌ Error limpiando todo: ${error.message}`);
+      return false;
+    }
+  }
+
+  // =================== FUNCIONES DE LA APLICACIÓN ===================
+
+  function esRutaSantaFe3(nombreRuta) {
+    if (!nombreRuta) return false;
+    const rutaLimpia = nombreRuta.toString().toLowerCase().trim();
+    return rutaLimpia.includes('santa fe 3') || 
+           rutaLimpia === 'santa fe 3' ||
+           rutaLimpia.includes('santa fe3') ||
+           rutaLimpia.includes('titular');
+  }
+
+  function esTipoApoyo(tipoCarga) {
+    if (!tipoCarga) return false;
+    const tipoLimpio = tipoCarga.toString().toLowerCase().trim();
+    return tipoLimpio === 'apoyo' || 
+           tipoLimpio.includes('apoyo') ||
+           tipoLimpio === 'apoyo vehicular' ||
+           tipoLimpio === 'vehicular';
+  }
+
+  async function filtrarSantaFe3() {
+    filtroActivo = 'santa-fe-3';
+    await actualizarDashboard();
+    mostrarNotificacion('Filtro activado: Mostrando solo ruta Santa Fe 3', 'info');
+  }
+
+  async function filtrarApoyo() {
+    filtroActivo = 'apoyo';
+    await actualizarDashboard();
+    mostrarNotificacion('Filtro activado: Mostrando solo tipo Apoyo', 'warning');
+  }
+
+  async function quitarFiltros() {
+    filtroActivo = 'todos';
+    await actualizarDashboard();
+    mostrarNotificacion('Mostrando todos los camiones', 'info');
+  }
+
+  async function buscarCamion(numero) {
+    if (!numero || numero.trim() === '') {
+      document.getElementById('searchResult').style.display = 'none';
+      return;
+    }
+    
+    updateDebugInfo(`Buscando camión #${numero}...`);
+    
+    const camion = await buscarCamionFirebase(numero);
+    
+    if (camion) {
+      camionEncontrado = camion;
+      mostrarResultadoBusqueda(camion);
+      resaltarCamion(camion);
+      scrollToCarril(camion.carril || camion.carrilSeleccionado);
+      updateDebugInfo(`✅ Camión #${numero} encontrado en carril ${mapaCarriles[camion.carril || camion.carrilSeleccionado] || 'desconocido'}`);
+    } else {
+      mostrarErrorBusqueda(numero);
+      updateDebugInfo(`❌ Camión #${numero} no encontrado`);
+    }
+  }
+
+  function mostrarResultadoBusqueda(camion) {
+    const letraCarril = mapaCarriles[camion.carril || camion.carrilSeleccionado] || camion.carril || '?';
+    const resultDiv = document.getElementById('searchResult');
+    
+    let iconos = '';
+    if (esRutaSantaFe3(camion.nombreRuta || camion.ruta)) iconos += '🟢 ';
+    if (esTipoApoyo(camion.tipoCarga || camion.tipo)) iconos += '🔴 ';
+    
+    resultDiv.innerHTML = `
+      <div class="d-flex align-items-center justify-content-center">
+        <span style="font-size: 1.5rem; margin-right: 10px;">✅</span>
+        <div>
+          <strong>${iconos}Camion #${camion.numeroCamion || camion.numero} encontrado!</strong><br>
+          <small>Se encuentra en el <strong>Carril ${letraCarril}</strong> (Ruta: ${camion.nombreRuta || camion.ruta || 'Sin ruta'})</small>
+        </div>
+        <button class="btn btn-sm btn-outline-secondary ms-3" onclick="limpiarBusqueda()">
+          ✕ Limpiar
+        </button>
+      </div>
+    `;
+    resultDiv.className = 'alert alert-success text-center mb-3';
+    resultDiv.style.display = 'block';
+  }
+
+  function mostrarErrorBusqueda(numero) {
+    const resultDiv = document.getElementById('searchResult');
+    resultDiv.innerHTML = `
+      <div class="d-flex align-items-center justify-content-center">
+        <span style="font-size: 1.5rem; margin-right: 10px;">❌</span>
+        <div>
+          <strong>Camion #${numero} no encontrado</strong><br>
+          <small>Verifica el número e intenta nuevamente</small>
+        </div>
+        <button class="btn btn-sm btn-outline-secondary ms-3" onclick="limpiarBusqueda()">
+          ✕ Cerrar
+        </button>
+      </div>
+    `;
+    resultDiv.className = 'alert alert-danger text-center mb-3';
+    resultDiv.style.display = 'block';
+  }
+
+  function resaltarCamion(camion) {
+    const letraCarril = mapaCarriles[camion.carril || camion.carrilSeleccionado] || camion.carril || '?';
+    const carrilDiv = document.getElementById(`carril-${letraCarril}`);
+    
+    if (carrilDiv) {
+      carrilDiv.classList.add('carril-con-camion-encontrado');
+      
+      const tarjetas = carrilDiv.querySelectorAll('.tarjeta-camion');
+      tarjetas.forEach(tarjeta => {
+        const cardTitle = tarjeta.querySelector('.card-title');
+        const numeroCamion = camion.numeroCamion || camion.numero;
+        if (cardTitle && cardTitle.textContent.includes(`Camión #${numeroCamion}`)) {
+          const card = tarjeta.querySelector('.card');
+          card.classList.add('camion-encontrado');
+          
+          const badge = document.createElement('span');
+          badge.className = 'found-indicator';
+          badge.innerHTML = '✓';
+          tarjeta.appendChild(badge);
+        }
+      });
+      
+      const badge = carrilDiv.querySelector('.badge');
+      if (badge) {
+        badge.classList.add('badge-encontrado');
+        badge.innerHTML = `${badge.textContent} ✓`;
+      }
+    }
+  }
+
+  function scrollToCarril(carrilNumero) {
+    const letraCarril = mapaCarriles[carrilNumero] || carrilNumero;
+    const carrilDiv = document.getElementById(`carril-${letraCarril}`);
+    if (carrilDiv) carrilDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function limpiarResaltado() {
+    document.querySelectorAll('.carril-columna').forEach(col => {
+      col.classList.remove('carril-con-camion-encontrado');
+    });
+    document.querySelectorAll('.card').forEach(card => {
+      card.classList.remove('camion-encontrado');
+    });
+    document.querySelectorAll('.badge').forEach(badge => {
+      badge.classList.remove('badge-encontrado');
+      if (badge.textContent.includes('✓')) {
+        badge.textContent = badge.textContent.replace(' ✓', '');
+      }
+    });
+    document.querySelectorAll('.found-indicator').forEach(indicator => {
+      indicator.remove();
+    });
+    camionEncontrado = null;
+  }
+
+  function limpiarBusqueda() {
+    const searchInput = document.getElementById('searchInput');
+    searchInput.value = '';
+    searchInput.focus();
+    
+    document.querySelector('.clear-search').style.display = 'none';
+    document.getElementById('searchResult').style.display = 'none';
+    
+    limpiarResaltado();
+  }
+
+  function mostrarLoading(mostrar) {
+    const spinner = document.getElementById('loadingSpinner');
+    const btnActualizar = document.querySelector('.btn-success');
+    
+    if (mostrar) {
+      spinner.style.display = 'inline-block';
+      btnActualizar.disabled = true;
+      btnActualizar.innerHTML = '🔄 Cargando...';
+    } else {
+      spinner.style.display = 'none';
+      btnActualizar.disabled = false;
+      btnActualizar.innerHTML = '🔄 Actualizar';
+    }
+  }
+
+  function solicitarContrasena(accion) {
+    accionPendiente = accion;
+    document.getElementById('adminPassword').value = '';
+    document.getElementById('passwordError').classList.add('d-none');
+    new bootstrap.Modal(document.getElementById('passwordModal')).show();
+  }
+
+  function verificarContrasena() {
+    const passwordInput = document.getElementById('adminPassword').value;
+    const errorDiv = document.getElementById('passwordError');
+    
+    if (passwordInput === PASSWORD_CORRECTA) {
+      const passwordModal = bootstrap.Modal.getInstance(document.getElementById('passwordModal'));
+      passwordModal.hide();
+      
+      if (accionPendiente === 'limpiarCarril') {
+        ejecutarLimpiarCarril();
+      } else if (accionPendiente === 'limpiarTodo') {
+        ejecutarLimpiarTodo();
+      }
+      
+      accionPendiente = null;
+    } else {
+      errorDiv.classList.remove('d-none');
+      document.getElementById('adminPassword').value = '';
+      document.getElementById('adminPassword').focus();
+    }
+  }
+
+  async function ejecutarLimpiarCarril() {
+    const select = document.getElementById("carrilSeleccionado");
+    const carrilSeleccionado = select.value;
+    
+    if (!carrilSeleccionado) {
+      mostrarNotificacion("Por favor, selecciona un carril primero", 'warning');
+      return;
+    }
+    
+    if (confirm(`¿Estás seguro de que quieres limpiar el Carril ${carrilSeleccionado}?`)) {
+      mostrarLoading(true);
+      updateDebugInfo(`Limpiando carril ${carrilSeleccionado}...`);
+      
+      const exito = await limpiarCarrilFirebase(carrilSeleccionado);
+      
+      if (exito) {
+        await actualizarDashboard();
+        limpiarBusqueda();
+        select.value = "";
+        mostrarNotificacion(`Carril ${carrilSeleccionado} limpiado correctamente`, 'success');
+      } else {
+        mostrarNotificacion("Error al limpiar el carril", 'danger');
+      }
+      
+      mostrarLoading(false);
+    }
+  }
+
+  async function ejecutarLimpiarTodo() {
+    if (confirm("¿Estás seguro de que quieres limpiar TODOS los carriles?")) {
+      mostrarLoading(true);
+      updateDebugInfo('Limpiando todos los carriles...');
+      
+      const exito = await limpiarTodoFirebase();
+      
+      if (exito) {
+        await actualizarDashboard();
+        limpiarBusqueda();
+        mostrarNotificacion("Todos los carriles han sido limpiados", 'success');
+      } else {
+        mostrarNotificacion("Error al limpiar los carriles", 'danger');
+      }
+      
+      mostrarLoading(false);
+    }
+  }
+
+  function mostrarNotificacion(mensaje, tipo = 'success') {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${tipo} alert-dismissible fade show position-fixed top-0 end-0 m-3`;
+    alertDiv.style.zIndex = '1050';
+    alertDiv.innerHTML = `
+      <strong>${tipo === 'success' ? '✓' : '⚠️'} ${tipo === 'success' ? 'Éxito!' : 'Atención!'}</strong> ${mensaje}
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+    document.body.appendChild(alertDiv);
+    setTimeout(() => { if (alertDiv.parentNode) alertDiv.remove(); }, 3000);
+  }
+
+  async function actualizarDashboard() {
+    mostrarLoading(true);
+    updateDebugInfo('Actualizando dashboard...');
+    
+    const dashboard = document.getElementById("dashboardCarriles");
+    
+    try {
+      // Verificar conexión primero
+      if (!firebaseInitialized) {
+        const initialized = await initializeFirebase();
+        if (!initialized) {
+          throw new Error('No se pudo inicializar Firebase');
+        }
+      }
+      
+      const camiones = await obtenerCamiones();
+      updateDebugInfo(`Procesando ${camiones.length} camiones para dashboard`);
+      
+      if (camiones.length === 0) {
+        dashboard.innerHTML = `
+          <div class="empty-message w-100">
+            <div class="alert alert-info">
+              <h5>📭 No hay camiones registrados</h5>
+              <p>La base de datos está vacía. Agrega camiones desde la página principal.</p>
+              <a href="index.html" class="btn btn-primary mt-2">Ir a Registrar Camiones</a>
+            </div>
+          </div>
+        `;
+        mostrarLoading(false);
+        return;
+      }
+
+      const camionesFiltrados = camiones.filter(camion => {
+        if (filtroActivo === 'todos') return true;
+        if (filtroActivo === 'santa-fe-3' && esRutaSantaFe3(camion.nombreRuta || camion.ruta)) return true;
+        if (filtroActivo === 'apoyo' && esTipoApoyo(camion.tipoCarga || camion.tipo)) return true;
+        return false;
+      });
+
+      const carrilesAgrupados = {};
+      camionesFiltrados.forEach(camion => {
+        const carril = camion.carril || camion.carrilSeleccionado || '1';
+        const letra = mapaCarriles[carril] || carril;
+        if (!carrilesAgrupados[letra]) carrilesAgrupados[letra] = [];
+        carrilesAgrupados[letra].push(camion);
+      });
+
+      const ordenCarriles = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"];
+      
+      dashboard.innerHTML = "";
+      
+      let totalCamiones = camionesFiltrados.length;
+      let contadorSantaFe3 = 0;
+      let contadorApoyo = 0;
+      
+      ordenCarriles.forEach(letra => {
+        const camionesEnCarril = carrilesAgrupados[letra];
+        
+        if (!camionesEnCarril || camionesEnCarril.length === 0) {
+          if (filtroActivo === 'todos') {
+            const columnaVacia = document.createElement("div");
+            columnaVacia.className = "carril-columna";
+            columnaVacia.id = `carril-${letra}`;
+
+            const headerVacio = document.createElement("div");
+            headerVacio.className = "carril-header";
+            
+            const tituloVacio = document.createElement("div");
+            tituloVacio.className = "carril-letra";
+            tituloVacio.textContent = `Carril ${letra}`;
+            
+            const badgeVacio = document.createElement("span");
+            badgeVacio.className = "badge bg-secondary";
+            badgeVacio.textContent = "0";
+            
+            headerVacio.appendChild(tituloVacio);
+            headerVacio.appendChild(badgeVacio);
+            columnaVacia.appendChild(headerVacio);
+
+            const mensajeVacio = document.createElement("div");
+            mensajeVacio.className = "empty-message";
+            mensajeVacio.textContent = "Vacío";
+            columnaVacia.appendChild(mensajeVacio);
+
+            dashboard.appendChild(columnaVacia);
+          }
+          return;
+        }
+        
+        const columna = document.createElement("div");
+        columna.className = "carril-columna";
+        columna.id = `carril-${letra}`;
+
+        const header = document.createElement("div");
+        header.className = "carril-header";
+        
+        const titulo = document.createElement("div");
+        titulo.className = "carril-letra";
+        titulo.textContent = `Carril ${letra}`;
+        
+        const badge = document.createElement("span");
+        badge.className = "badge bg-primary";
+        badge.textContent = camionesEnCarril.length;
+        
+        header.appendChild(titulo);
+        header.appendChild(badge);
+        columna.appendChild(header);
+
+        camionesEnCarril.forEach(camion => {
+          const esSantaFe3 = esRutaSantaFe3(camion.nombreRuta || camion.ruta);
+          const esApoyo = esTipoApoyo(camion.tipoCarga || camion.tipo);
+          
+          if (esSantaFe3) contadorSantaFe3++;
+          if (esApoyo) contadorApoyo++;
+          
+          const tarjeta = document.createElement("div");
+          tarjeta.className = "tarjeta-camion";
+          
+          let clasesCard = 'card shadow h-100';
+          let indicadorEspecial = '';
+          
+          if (esSantaFe3 && esApoyo) {
+            clasesCard += ' ruta-santa-fe-3 tipo-apoyo';
+            indicadorEspecial = '<div class="indicador-especial indicador-combinado"></div>';
+          } else if (esSantaFe3) {
+            clasesCard += ' ruta-santa-fe-3';
+            indicadorEspecial = '<div class="indicador-especial indicador-santa-fe-3"></div>';
+          } else if (esApoyo) {
+            clasesCard += ' tipo-apoyo';
+            indicadorEspecial = '<div class="indicador-especial indicador-apoyo"></div>';
+          }
+          
+          let badgeRuta = esSantaFe3 ? '<span class="badge badge-ruta ms-1">Titular</span>' : '';
+          let badgeTipo = esApoyo ? '<span class="badge badge-tipo ms-1">APOYO</span>' : '';
+          
+          const estaActivo = !camion.horaSalida || camion.horaSalida === '—';
+          const estadoBadge = estaActivo ? 
+            '<span class="badge bg-success ms-1">Activo</span>' : 
+            '<span class="badge bg-secondary ms-1">Completado</span>';
+          
+          const numeroMostrar = camion.numeroCamion || camion.numero || '000';
+          const rutaMostrar = camion.nombreRuta || camion.ruta || 'Sin ruta';
+          const tipoMostrar = camion.tipoCarga || camion.tipo || 'Sin tipo';
+          const horaLlegadaMostrar = camion.horaLlegada || camion.hora || '—';
+          const horaSalidaMostrar = camion.horaSalida || 'Pendiente';
+          
+          tarjeta.innerHTML = `
+            ${indicadorEspecial}
+            <div class="${clasesCard}">
+              <img src="ruzaimagen.jpg" class="card-img-top" alt="Camión">
+              <div class="card-body">
+                <h5 class="card-title">
+                  Camión #${numeroMostrar}
+                  ${estadoBadge}
+                  ${badgeRuta}
+                  ${badgeTipo}
+                </h5>
+                <p><strong>Ruta:</strong> ${rutaMostrar}</p>
+                <p><strong>Tipo:</strong> ${tipoMostrar}</p>
+                <p><strong>Llegada:</strong> ${horaLlegadaMostrar}</p>
+                <p><strong>Salida:</strong> ${horaSalidaMostrar}</p>
+                <button class="btn btn-sm btn-outline-primary mt-2" onclick="registrarSalidaDesdeDashboard('${camion.id}', '${numeroMostrar}')" ${!estaActivo ? 'disabled' : ''}>
+                  🚀 Registrar Salida
+                </button>
+              </div>
+            </div>
+          `;
+          columna.appendChild(tarjeta);
+        });
+
+        dashboard.appendChild(columna);
+      });
+      
+      const tituloPrincipal = document.querySelector('h2.text-center');
+      if (filtroActivo === 'todos') {
+        tituloPrincipal.textContent = `📋 Camiones Registrados (${totalCamiones} camiones)`;
+      } else if (filtroActivo === 'santa-fe-3') {
+        tituloPrincipal.textContent = `🟢 Camiones Titulares (${contadorSantaFe3} camiones)`;
+      } else if (filtroActivo === 'apoyo') {
+        tituloPrincipal.textContent = `🔴 Camiones de Apoyo (${contadorApoyo} camiones)`;
+      }
+      
+      if (camionEncontrado) {
+        setTimeout(() => resaltarCamion(camionEncontrado), 100);
+      }
+      
+      updateDebugInfo(`✅ Dashboard actualizado con ${totalCamiones} camiones`);
+      
+    } catch (error) {
+      console.error('Error actualizando dashboard:', error);
+      updateDebugInfo(`❌ Error actualizando dashboard: ${error.message}`);
+      
+      dashboard.innerHTML = `
+        <div class="empty-message w-100">
+          <div class="alert alert-danger">
+            <h5>❌ Error al cargar datos</h5>
+            <p>${error.message || 'No se pudieron cargar los datos desde Firebase.'}</p>
+            <div class="mt-3">
+              <button class="btn btn-primary me-2" onclick="actualizarDashboard()">Reintentar</button>
+              <button class="btn btn-warning" onclick="testFirebaseConnection()">Probar Conexión</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    mostrarLoading(false);
+  }
+
+  async function registrarSalidaDesdeDashboard(camionId, numeroCamion) {
+    if (!confirm(`¿Registrar salida para camión #${numeroCamion}?`)) return;
+    
+    try {
+      mostrarLoading(true);
+      updateDebugInfo(`Registrando salida para camión #${numeroCamion}...`);
+      
+      const horaSalida = new Date().toLocaleTimeString();
+      const fechaSalida = new Date().toISOString();
+      
+      await db.collection('camiones').doc(camionId).update({
+        horaSalida: horaSalida,
+        fechaSalida: fechaSalida,
+        estado: "completado"
+      });
+      
+      mostrarNotificacion(`✅ Salida registrada para camión ${numeroCamion}`, 'success');
+      updateDebugInfo(`✅ Salida registrada para camión #${numeroCamion}`);
+      
+      await actualizarDashboard();
+      
+    } catch (error) {
+      console.error('Error registrando salida:', error);
+      updateDebugInfo(`❌ Error registrando salida: ${error.message}`);
+      mostrarNotificacion('Error al registrar salida', 'danger');
+    } finally {
+      mostrarLoading(false);
+    }
+  }
+
+  // Event Listeners
+  document.getElementById('searchInput').addEventListener('input', function(e) {
+    document.querySelector('.clear-search').style.display = this.value ? 'block' : 'none';
+    if (!this.value) limpiarBusqueda();
+  });
+
+  document.getElementById('searchInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      buscarCamion(this.value);
+    }
+  });
+
+  document.getElementById('adminPassword').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      verificarContrasena();
+    }
+  });
+
+  // Inicializar al cargar
+  document.addEventListener('DOMContentLoaded', async function() {
+    try {
+      // Poner foco en el buscador
+      document.getElementById('searchInput').focus();
+      
+      // Inicializar Firebase y cargar datos
+      updateDebugInfo('Aplicación cargando...');
+      await initializeFirebase();
+      await actualizarDashboard();
+      
+      // Buscar desde URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const searchParam = urlParams.get('search');
+      if (searchParam) {
+        document.getElementById('searchInput').value = searchParam;
+        setTimeout(() => buscarCamion(searchParam), 1000);
+      }
+      
+      updateDebugInfo('✅ Aplicación inicializada correctamente');
+      
+    } catch (error) {
+      console.error('Error inicializando aplicación:', error);
+      updateDebugInfo(`❌ Error crítico: ${error.message}`);
+      
+      document.getElementById('dashboardCarriles').innerHTML = `
+        <div class="empty-message w-100">
+          <div class="alert alert-danger">
+            <h5>❌ Error crítico de inicialización</h5>
+            <p>${error.message}</p>
+            <div class="mt-3">
+              <button class="btn btn-primary" onclick="location.reload()">Recargar página</button>
+              <a href="index.html" class="btn btn-secondary ms-2">Ir a página principal</a>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+  });
+</script>
+</body>
+</html>
